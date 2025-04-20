@@ -1,0 +1,318 @@
+<%@ page import="java.sql.*" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Blog CMS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { color: #333; }
+        form, .blog-post { margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background: #218838; }
+        .blog-post { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Blog CMS</h2>
+
+    <form method="post">
+        <input type="text" name="title" placeholder="Blog Title" required />
+        <textarea name="content" rows="5" placeholder="Blog Content" required></textarea>
+        <button type="submit">Add Blog</button>
+    </form>
+
+    <h3>All Blogs:</h3>
+    <%
+        // JDBC setup
+        String url = "jdbc:mysql://localhost:3306/blogdb"; // Change DB name
+        String user = "root";
+        String pass = "root"; // Change your password
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        Connection conn = DriverManager.getConnection(url, user, pass);
+
+        // Insert new blog if form is submitted
+        String blogTitle = request.getParameter("title");
+        String blogContent = request.getParameter("content");
+
+        if (blogTitle != null && blogContent != null) {
+            PreparedStatement ps = conn.prepareStatement("INSERT INTO blogs (title, content) VALUES (?, ?)");
+            ps.setString(1, blogTitle);
+            ps.setString(2, blogContent);
+            ps.executeUpdate();
+        }
+
+        // Fetch and display all blogs
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM blogs ORDER BY id DESC");
+
+        while (rs.next()) {
+            String title = rs.getString("title");
+            String content = rs.getString("content");
+    %>
+        <div class="blog-post">
+            <h4><%= title %></h4>
+            <p><%= content %></p>
+        </div>
+    <%
+        }
+        conn.close();
+    %>
+
+</body>
+</html>
+
+
+----------------------------------------------------
+CREATE DATABASE blogdb;
+USE blogdb;
+
+CREATE TABLE blogs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255),
+    content TEXT
+);
+----------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog CMS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { color: #333; }
+        form, .blog-post { margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background: #218838; }
+        .blog-post { padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
+        .blog-post h4 { margin: 0; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h2>Blog CMS</h2>
+
+    <form id="blogForm">
+        <input type="text" id="title" placeholder="Blog Title" required />
+        <textarea id="content" rows="5" placeholder="Blog Content" required></textarea>
+        <button type="submit">Add Blog</button>
+    </form>
+
+    <h3>All Blogs:</h3>
+    <div id="blogsContainer">
+        <!-- Dynamically loaded blog posts will appear here -->
+    </div>
+
+    <script>
+        document.getElementById('blogForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            if (title && content) {
+                const blogPost = document.createElement('div');
+                blogPost.classList.add('blog-post');
+                blogPost.innerHTML = `
+                    <h4>${title}</h4>
+                    <p>${content}</p>
+                `;
+                
+                document.getElementById('blogsContainer').appendChild(blogPost);
+
+                // Clear the form
+                document.getElementById('title').value = '';
+                document.getElementById('content').value = '';
+            } else {
+                alert("Please fill in both fields!");
+            }
+        });
+    </script>
+</body>
+</html>
+---------------------------------------------------------------------------------------
+CREATE DATABASE blog_cms;
+
+USE blog_cms;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'user') DEFAULT 'user'
+);
+
+CREATE TABLE blogs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    author_id INT,
+    FOREIGN KEY (author_id) REFERENCES users(id)
+);
+----------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog CMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to Blog CMS</h1>
+        <nav>
+            <a href="login.html">Login</a> | <a href="register.html">Register</a>
+        </nav>
+    </header>
+    <main>
+        <section id="blog-list">
+            <!-- Blog posts will be dynamically loaded here -->
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Blog CMS</p>
+    </footer>
+    <script src="js/scripts.js"></script>
+</body>
+</html>
+----------------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Blog CMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <form id="login-form" action="LoginServlet" method="POST">
+        <h2>Login</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+        <p>Don't have an account? <a href="register.html">Register here</a></p>
+    </form>
+    <script src="js/scripts.js"></script>
+</body>
+</html>
+------------------------------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - Blog CMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <form id="register-form" action="RegisterServlet" method="POST">
+        <h2>Register</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <label for="role">Role:</label>
+        <select id="role" name="role">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+        </select>
+        <button type="submit">Register</button>
+    </form>
+    <script src="js/scripts.js"></script>
+</body>
+</html>
+------------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Blog CMS</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Admin Dashboard</h1>
+        <nav>
+            <a href="create-blog.html">Create Blog</a> | <a href="logout.html">Logout</a>
+        </nav>
+    </header>
+    <main>
+        <section id="blog-management">
+            <h2>Manage Blogs</h2>
+            <!-- Blog management interface -->
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Blog CMS</p>
+    </footer>
+    <script src="js/scripts.js"></script>
+</body>
+</html>
+----------------------------------------------------------------------------------
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+header, footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 1em 0;
+}
+
+nav a {
+    color: white;
+    margin: 0 10px;
+    text-decoration: none;
+}
+
+form {
+    background-color: white;
+    padding: 20px;
+    margin: 20px auto;
+    width: 300px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+form label {
+    display: block;
+    margin: 10px 0 5px;
+}
+
+form input, form select, form button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+form button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #45a049;
+}
+------------------------------------------------------------------------
+// scripts.js
+
+// Function to load blog posts dynamically
+function loadBlogs() {
+    fetch('BlogServlet')
+        .then(response => response.json())
+        .then(data => {
+            const blogList = document.getElementById('blog
+::contentReference[oaicite:0]{index=0}
+ 
+
